@@ -1,24 +1,44 @@
 package com.goit.ee.module1;
 
-import com.goit.ee.module1.Providers.List.ListIntegersProvider;
-import com.goit.ee.module1.Tests.List.TestListIntegersAdd;
+import com.goit.ee.module1.api.CollectionProvider;
+import com.goit.ee.module1.api.Operation;
+import com.goit.ee.module1.api.ReportGenerator;
+import com.goit.ee.module1.api.ResultsCollector;
+import com.goit.ee.module1.api.TestExecutor;
+import com.goit.ee.module1.collectors.TimeByOperationResultCollector;
+import com.goit.ee.module1.providers.ArrayListProvider;
+import com.goit.ee.module1.reportgenerators.MockReportGenerator;
+import com.goit.ee.module1.testexecutors.DefaultTestExecutor;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
- * Created by Администратор on 19.03.2016.
+ * @author Администратор
+ * @since 19.03.2016
  */
 public class Runner {
     public static void main(String[] args) {
 
-        ArrayList<Integer> integers = new ArrayList<>();
+        CollectionProvider<ArrayList<Integer>, Integer> provider = new ArrayListProvider<>();
+        final ArrayList<Integer> integers = provider.provide(Integer.class, 100);
 
-        new ListIntegersProvider().provide(integers,10);
+        ResultsCollector<Long> collector = new TimeByOperationResultCollector("ArrayList performance");
 
-        System.out.println(Tester.<List<Integer>>startTest(integers,100, new TestListIntegersAdd()));
+        TestExecutor testExecutor = new DefaultTestExecutor(collector);
+        testExecutor.execute(new Operation() {
+            @Override
+            public void apply() {
+                int index = (int) Math.round(Math.random() * integers.size());
+                integers.add(index, index);
+            }
 
-        System.out.println(integers.toString());
+            @Override
+            public String getName() {
+                return "Performance test: collection size: 100, times: 100";
+            }
+        }, 100);
 
+        ReportGenerator reportGenerator = new MockReportGenerator();
+        reportGenerator.generateReport(collector.getResult());
     }
 }
